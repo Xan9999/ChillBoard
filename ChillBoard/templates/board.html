@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>@{{ board_user.username }}'s Board</h1>
+<div class="gallery">
+    {% for img in images %}
+        <div>
+            <img src="{{ img.image.url }}" alt="{{ img.caption }}">
+            <p><em>{{ img.caption }}</em></p>
+        </div>
+    {% empty %}
+        <p>No images yet.</p>
+    {% endfor %}
+</div>
+{% endblock %} 

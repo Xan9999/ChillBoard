@@ -1,0 +1,23 @@
+{% extends 'base.html' %}  
+
+{% block content %}
+<h1>Register</h1>
+
+<form method="POST" action="{% url 'register' %}">  <!-- POST to the register URL -->
+    {% csrf_token %}  <!-- REQUIRED for security (prevents CSRF attacks) -->
+
+    {{ form.as_p }}  <!--    Renders the form fields automatically (username, password1, password2) -->
+
+    <button type="submit">Register user</button>
+</form>
+
+{% if messages %}  <!--  Show success/error messages -->
+    <ul>
+        {% for message in messages %}
+            <li>{{ message }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+<a href="{% url 'login' %}">Already have an account? Log in</a>
+{% endblock %}
