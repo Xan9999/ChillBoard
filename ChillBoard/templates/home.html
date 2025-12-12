@@ -2,8 +2,8 @@
 {% block content %}
 <h1>All Boards</h1>
 <ul>
-{% for u in users %}
-    <li><a href="{% url 'user_board' u.user__username %}">@{{ u.user__username }}</a></li>
+{% for user in users %}
+    <li><a href="{% url 'user_board' user.username %}">@{{ user.username }}</a></li>
 {% empty %}
     <li>No users yet.</li>
 {% endfor %}

@@ -8,13 +8,16 @@ from django.contrib.auth.models import User
 from .models import ImagePost
 from .forms import ImagePostForm, CustomUserCreationForm
 from django.contrib.auth.forms import AuthenticationForm
+from django.http import JsonResponse
+import json
+
 
 # Create your views here.
 
 
 # 1. Home – list all users with boards
 def home(request):
-    users = ImagePost.objects.values('user__username').distinct()
+    users = User.objects.all().order_by('username')
     return render(request, 'home.html', {'users': users})
 
 # 2. Post image (login required)
@@ -71,3 +74,25 @@ def register(request):
         form = CustomUserCreationForm()
         messages.error(request, 'Please correct the errors below')
     return render(request, 'register.html', {'form': form})
+
+@login_required
+def save_position(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            image_id = data.get('id')
+            x = int(float(data.get('x', 0)))  # handle "123px"
+            y = int(float(data.get('y', 0)))
+
+            img = ImagePost.objects.get(id=image_id, user=request.user)
+            img.pos_x = x
+            img.pos_y = y
+            img.width = data['width']
+            img.height = data['height']
+            img.save()
+
+            return JsonResponse({'status': 'saved', 'x': x, 'y': y})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+    
+    return JsonResponse({'error': 'invalid method'}, status=405)

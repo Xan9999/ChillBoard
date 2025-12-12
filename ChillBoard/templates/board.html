@@ -1,14 +1,180 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1>@{{ board_user.username }}'s Board</h1>
-<div class="gallery">
+<h1>{{ board_user.username }}'s Board</h1>
+
+{% if user.is_authenticated and user == board_user %}
+    <!-- 1. UPLOAD BUTTON (click opens file picker) -->
+    <div style="text-align: center; margin: 30px 0; position: relative; z-index: 2000;">
+        <button id="upload-btn" class="upload-btn">Upload Image</button>
+        <input type="file" id="file-picker" multiple accept="image/*" style="display: none;">
+        <div id="button-progress" style="margin-top: 10px;"></div>
+    </div>
+
+    <hr style="margin: 40px 0; border: 1px dashed #ccc;">
+{% endif %}
+
+<!-- FULL GALLERY + DRAGGABLE IMAGES + DROPZONE -->
+<div class="gallery" id="gallery">
+    <!-- Invisible dropzone that covers the gallery only -->
+    {% if user.is_authenticated and user == board_user %}
+        <div id="gallery-dropzone" class="gallery-dropzone">
+            <div id="drop-progress"></div>
+        </div>
+    {% endif %}
+
+    <!-- All images (draggable) -->
     {% for img in images %}
-        <div>
-            <img src="{{ img.image.url }}" alt="{{ img.caption }}">
-            <p><em>{{ img.caption }}</em></p>
+        <div class="image-item draggable"
+        data-id="{{ img.id }}"
+        data-x="{{ img.pos_x|default:'0' }}"
+        data-y="{{ img.pos_y|default:'0' }}"
+        style="left: {{ img.pos_x }}px; top: {{ img.pos_y }}px; 
+               width: {{ img.width }}px; height: {{ img.height }}px; 
+               position: absolute;">        
+        <img src="{{ img.image.url }}" alt="{{ img.caption }}" class="img" style="height: {{img.height}}px; width: {{img.width}}px;">
+            {% if img.caption %}<p><em>{{ img.caption }}</em></p>
+            {% endif %}
+        <div class="resize-handle"></div>
         </div>
     {% empty %}
-        <p>No images yet.</p>
+        <p style="text-align:center; padding:120px 0; color:#888; font-size:1.2em;">
+            No images yet.<br>
+            {% if user.is_authenticated and user == board_user %}
+                Use the button above or drag & drop to start your collage!
+            {% endif %}
+        </p>
     {% endfor %}
 </div>
-{% endblock %} 
+
+<!-- DRAG TO UPLOAD + CLICK TO UPLOAD + DRAGGABLE IMAGES -->
+<script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadBtn = document.getElementById('upload-btn');
+    const filePicker = document.getElementById('file-picker');
+    const buttonProgress = document.getElementById('button-progress');
+    const dropZone = document.getElementById('gallery-dropzone');
+    const dropProgress = document.getElementById('drop-progress');
+
+    // Upload button
+    if (uploadBtn) uploadBtn.onclick = () => filePicker.click();
+    if (filePicker) filePicker.onchange = () => uploadFiles(filePicker.files, buttonProgress);
+
+    // Drop zone
+    if (dropZone) {
+        ['dragenter','dragover','dragleave','drop'].forEach(e => 
+            dropZone.addEventListener(e, ev => { ev.preventDefault(); ev.stopPropagation(); })
+        );
+        dropZone.addEventListener('dragenter', () => dropZone.classList.add('active'));
+        dropZone.addEventListener('dragover', () => dropZone.classList.add('active'));
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('active'));
+        dropZone.addEventListener('drop', e => {
+            dropZone.classList.remove('active');
+            uploadFiles(e.dataTransfer.files, dropProgress);
+        });
+    }
+
+    // DRAGGING (your current working system — keep it!)
+    interact('.draggable')
+        .draggable({
+            inertia: false,
+            autoScroll: false,
+            modifiers: [
+                interact.modifiers.restrictRect({
+                    restriction: '#gallery',
+                    endOnly: false
+                })
+            ],
+            listeners: {
+                move(event) {
+                    const target = event.target;
+                    let x = (parseFloat(target.dataset.x) || 0) + event.dx;
+                    let y = (parseFloat(target.dataset.y) || 0) + event.dy;
+
+                    target.style.left = x + 'px';
+                    target.style.top = y + 'px';
+                    target.dataset.x = x;
+                    target.dataset.y = y;
+                },
+                end: savePosition
+            }})
+        .resizable({
+            edges: { right: true, bottom: true },
+            listeners: {
+                move(event) {
+                    const box = event.target;                     // ← the draggable box
+                    const img = box.querySelector('img'); 
+
+                    const newWidth = event.rect.width;
+                    const newHeight = event.rect.height;
+
+                    // Resize the image itself
+                    img.style.width = newWidth + 'px';
+                    img.style.height = newHeight + 'px';
+
+                    // Resize container to match
+                    box.style.width = newWidth + 'px';
+                    box.style.height = newHeight + 'px';
+
+                    // Update position when resizing from corner
+                    let x = (parseFloat(box.dataset.x) || 0) + event.deltaRect.left;
+                    let y = (parseFloat(box.dataset.y) || 0) + event.deltaRect.top;
+
+                    box.style.left = x + 'px';
+                    box.style.top = y + 'px';
+                    box.dataset.x = x;
+                    box.dataset.y = y;
+                },
+                end: savePosition
+            }
+        });
+
+    function savePosition(event) {
+        const container = event.target.closest('.draggable') || event.target.parentElement;
+        const img = container.querySelector('img');
+        const id = container.dataset.id;
+
+        const x = parseFloat(container.style.left) || 0;
+        const y = parseFloat(container.style.top) || 0;
+        const w = parseFloat(img.style.width) || 300;
+        const h = parseFloat(img.style.height) || 300;
+
+        fetch("{% url 'save_position' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                id: id,
+                x: x,
+                y: y,
+                width: w,
+                height: h
+            })
+        })
+        .then(r => r.json())
+        .then(data => console.log('Saved:', data))
+        .catch(err => console.error('Error:', err));
+    }
+
+    function uploadFiles(files, container) {
+        [...files].forEach(file => {
+            if (!file.type.startsWith('image/')) return;
+            const prog = document.createElement('progress');
+            prog.max = 100; prog.value = 0;
+            container.appendChild(prog);
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', "{% url 'post_image' %}");
+            xhr.upload.onprogress = e => { if (e.lengthComputable) prog.value = (e.loaded/e.total)*100; };
+            xhr.onload = () => { if (xhr.status === 200 || xhr.status === 302) location.reload(); };
+            xhr.send(formData);
+        });
+    }
+});
+</script>
+{% endblock %}
