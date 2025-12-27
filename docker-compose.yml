@@ -1,13 +1,15 @@
 services:
   web:
     build: .
-    command: python manage.py runserver 0.0.0.0:8000
+    command: 
+    - sh
+    - -c
+    - "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/app
-      - ./db.sqlite3:/app/db.sqlite3:rw
       - ./media:/app/media
       - ./static:/app/static
     ports:
       - "8000:8000"
     environment:
-      - DEBUG=1aa
+      - DEBUG=1
