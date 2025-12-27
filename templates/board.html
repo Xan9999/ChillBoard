@@ -9,12 +9,18 @@
         <input type="file" id="file-picker" multiple accept="image/*" style="display: none;">
         <div id="button-progress" style="margin-top: 10px;"></div>
     </div>
+    {% if user.is_authenticated and user == board_user %}
+        <!-- DELETE ZONE — levo od upload -->
+        <div id="delete-zone" class="delete-zone">
+            <span>Delete image</span>
+        </div>
+    {% endif %}
 
     <hr style="margin: 40px 0; border: 1px dashed #ccc;">
 {% endif %}
 
 <!-- FULL GALLERY + DRAGGABLE IMAGES + DROPZONE -->
-<div class="gallery" id="gallery">
+<div class="gallery {% if user.is_authenticated and user == board_user %}editable{% endif %}" id="gallery">
     <!-- Invisible dropzone that covers the gallery only -->
     {% if user.is_authenticated and user == board_user %}
         <div id="gallery-dropzone" class="gallery-dropzone">
@@ -47,6 +53,7 @@
 </div>
 
 <!-- DRAG TO UPLOAD + CLICK TO UPLOAD + DRAGGABLE IMAGES -->
+{% if user.is_authenticated and user == board_user %}
 <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
 <script>
@@ -62,6 +69,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (filePicker) filePicker.onchange = () => uploadFiles(filePicker.files, buttonProgress);
 
     // Drop zone
+
     if (dropZone) {
         ['dragenter','dragover','dragleave','drop'].forEach(e => 
             dropZone.addEventListener(e, ev => { ev.preventDefault(); ev.stopPropagation(); })
@@ -74,8 +82,8 @@ document.addEventListener('DOMContentLoaded', function() {
             uploadFiles(e.dataTransfer.files, dropProgress);
         });
     }
-
-    // DRAGGING (your current working system — keep it!)
+    // dragging
+    
     interact('.draggable')
         .draggable({
             inertia: false,
@@ -103,7 +111,7 @@ document.addEventListener('DOMContentLoaded', function() {
             edges: { right: true, bottom: true },
             listeners: {
                 move(event) {
-                    const box = event.target;                     // ← the draggable box
+                    const box = event.target;                     // ← draggable skatla
                     const img = box.querySelector('img'); 
 
                     const newWidth = event.rect.width;
@@ -177,4 +185,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+{% endif %}
 {% endblock %}

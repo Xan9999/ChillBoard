@@ -1,0 +1,115 @@
+/* FULL-SCREEN DROPZONE – FIXED VERSION */
+.fullscreen-dropzone {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 999;
+    pointer-events: none;
+    opacity: 0;
+    transition: all 0.4s ease;
+}
+
+.upload-btn {
+    position: relative;
+    z-index: 1000 !important;        /* ← Above the overlay */
+    padding: 16px 32px;
+    font-size: 1.3em;
+    cursor: pointer;
+}
+
+.delete-zone {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 200px;
+    height: 100px;
+    background: rgba(220, 53, 69, 0.2);
+    border: 3px dashed #dc3545;
+    border-radius: 12px;
+    color: #dc3545;
+    font-weight: bold;
+    font-size: 1.1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    pointer-events: none; /* allows drop */
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.delete-zone.active {
+    opacity: 1;
+    background: rgba(220, 53, 69, 0.4);
+    border-style: solid;
+}
+
+
+.fullscreen-dropzone.active {
+    opacity: 1;
+    pointer-events: all;
+    border: 8px dashed #007bff;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
+    width: auto;
+    height: auto;
+    border-radius: 20px;
+    box-sizing: border-box;
+}
+
+/* CRITICAL: Never block clicks when not active */
+.fullscreen-dropzone:not(.active) {
+    pointer-events: none !important;
+}
+
+
+/* Your upload button – make sure it’s clickable */
+
+.gallery {
+    position: relative;
+    min-height: 80vh;
+    background: #f8f9ff;
+    overflow: hidden;
+    margin: 20px auto;         /* ← adds space around it */
+    padding: 20px;
+    width: 4000px;
+    height: 2500px;
+    overflow: scroll;
+}
+
+.gallery.editable .image-item {
+    cursor: move;                  /* Hand cursor only when editable */
+    position: absolute;
+    user-select: none;
+    z-index: 10;
+}
+
+.gallery.editable .image-item:hover {
+    box-shadow: 0 12px 35px rgba(0,0,0,0.25);
+    z-index: 20;
+}
+
+.image-item img {
+    display: block;
+    width:100%; 
+    height:100%; 
+    object-fit: fill;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    outline: none !important;
+    max-width: none !important;
+    max-height: none !important;
+}
+
+
+.resize-handle {
+    position: absolute;
+    bottom: 0; right: 0;   /* move it outside so you don't see it */
+    width: 40px; height: 40px;
+    cursor: se-resize;
+    background: transparent;
+}
