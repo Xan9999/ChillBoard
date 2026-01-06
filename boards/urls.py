@@ -9,4 +9,5 @@ urlpatterns = [
     path('post/', views.post_image, name='post_image'),
     path('@<username>/', views.user_board, name='user_board'),
     path('save-position/', views.save_position, name='save_position'),
+    path('delete-image/<int:image_id>/', views.delete_image, name='delete_image'),
 ]

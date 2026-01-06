@@ -1,4 +1,10 @@
 /* FULL-SCREEN DROPZONE – FIXED VERSION */
+
+
+.base{
+    overflow-y: scroll;
+}
+
 .fullscreen-dropzone {
     position: absolute;
     top: 0; left: 0;
@@ -11,11 +17,45 @@
 }
 
 .upload-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    text-decoration: underline;
     position: relative;
     z-index: 1000 !important;        /* ← Above the overlay */
-    padding: 16px 32px;
-    font-size: 1.3em;
     cursor: pointer;
+    margin-right: 16px;
+    font-family: sans-serif;
+}
+
+.upload-btn:hover {
+  color: #003366;
+}
+
+.upload-btn:focus-visible {
+  outline: none;
+  text-decoration: underline;
+}
+
+.delete-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    text-decoration: underline;
+    position: relative;
+    z-index: 1000 !important;        /* ← Above the overlay */
+    cursor: pointer;
+    margin-right: 16px;
+    font-family: sans-serif;
+}
+
+.delete-btn:hover {
+  color: #003366;
+}
+
+.delete-btn:focus-visible {
+  outline: none;
+  text-decoration: underline;
 }
 
 .delete-zone {
@@ -70,14 +110,14 @@
 
 .gallery {
     position: relative;
-    min-height: 80vh;
-    background: #f8f9ff;
+    background-image: url(../Cork_S.jpg);
+    background-repeat: repeat;
     overflow: hidden;
     margin: 20px auto;         /* ← adds space around it */
     padding: 20px;
-    width: 4000px;
-    height: 2500px;
-    overflow: scroll;
+    width: 1995px;
+    height: 1504px;
+
 }
 
 .gallery.editable .image-item {
@@ -112,4 +152,17 @@
     width: 40px; height: 40px;
     cursor: se-resize;
     background: transparent;
+}
+
+body.delete-mode {
+  cursor: not-allowed;
+}
+
+body.delete-mode .gallery-image {
+  cursor: pointer;
+}
+
+body.delete-mode .gallery-image:hover {
+  outline: 3px solid red;
+  opacity: 0.7;
 }

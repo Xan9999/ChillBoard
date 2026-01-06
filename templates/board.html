@@ -1,24 +1,21 @@
 {% extends 'base.html' %}
-{% block content %}
-<h1>{{ board_user.username }}'s Board</h1>
-
-{% if user.is_authenticated and user == board_user %}
-    <!-- 1. UPLOAD BUTTON (click opens file picker) -->
-    <div style="text-align: center; margin: 30px 0; position: relative; z-index: 2000;">
+{%block nav_extra %}
+    {% if user.is_authenticated and user == board_user %}
+        <!-- 1. UPLOAD BUTTON (click opens file picker) -->
         <button id="upload-btn" class="upload-btn">Upload Image</button>
         <input type="file" id="file-picker" multiple accept="image/*" style="display: none;">
-        <div id="button-progress" style="margin-top: 10px;"></div>
-    </div>
     {% if user.is_authenticated and user == board_user %}
         <!-- DELETE ZONE — levo od upload -->
-        <div id="delete-zone" class="delete-zone">
-            <span>Delete image</span>
-        </div>
+        <button id="delete-btn" class="delete-btn">Delete Image</button>
     {% endif %}
+        <hr style="margin: 40px 0; border: 1px dashed #ccc;">
+    {% endif %}
+    <div id="button-progress" style="margin-top: 10px;"></div>
+{% endblock %}
 
-    <hr style="margin: 40px 0; border: 1px dashed #ccc;">
-{% endif %}
 
+{% block content %}
+<h1>{{ board_user.username }}'s Board</h1>
 <!-- FULL GALLERY + DRAGGABLE IMAGES + DROPZONE -->
 <div class="gallery {% if user.is_authenticated and user == board_user %}editable{% endif %}" id="gallery">
     <!-- Invisible dropzone that covers the gallery only -->
@@ -42,13 +39,6 @@
             {% endif %}
         <div class="resize-handle"></div>
         </div>
-    {% empty %}
-        <p style="text-align:center; padding:120px 0; color:#888; font-size:1.2em;">
-            No images yet.<br>
-            {% if user.is_authenticated and user == board_user %}
-                Use the button above or drag & drop to start your collage!
-            {% endif %}
-        </p>
     {% endfor %}
 </div>
 
@@ -58,6 +48,7 @@
 <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const deleteBtn = document.getElementById('delete-btn');
     const uploadBtn = document.getElementById('upload-btn');
     const filePicker = document.getElementById('file-picker');
     const buttonProgress = document.getElementById('button-progress');
@@ -67,7 +58,43 @@ document.addEventListener('DOMContentLoaded', function() {
     // Upload button
     if (uploadBtn) uploadBtn.onclick = () => filePicker.click();
     if (filePicker) filePicker.onchange = () => uploadFiles(filePicker.files, buttonProgress);
+    // Delete button
+    if (deleteBtn) {
+        deleteBtn.onclick = () => {
+            const draggableItems = document.querySelectorAll('.draggable');
+            const deleteHandlers = new Map();
+            draggableItems.forEach(item => {
 
+                function removeAllDeleteHandlers() {
+                    deleteHandlers.forEach((handler, item) => {
+                        item.removeEventListener('click', handler);
+                    });
+                    deleteHandlers.clear();
+                }
+
+                const handler = (e) => {
+                    e.stopPropagation();
+                    const imageId = item.dataset.id;
+                    fetch(`{% url 'delete_image' 0 %}`.replace('/0/', `/${imageId}/`), {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        }
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            item.remove();
+                            removeAllDeleteHandlers();
+                        } else {
+                            alert('Failed to delete image.');
+                        }
+                    });
+                }
+                deleteHandlers.set(item, handler);
+                item.addEventListener('click', handler);
+            });
+        };
+    }
     // Drop zone
 
     if (dropZone) {

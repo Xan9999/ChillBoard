@@ -34,6 +34,16 @@ def post_image(request):
         form = ImagePostForm()
     return render(request, 'post.html', {'form': form})
 
+@login_required
+def delete_image(request, image_id):
+    image = get_object_or_404(ImagePost, id=image_id, user=request.user)
+    if request.method == 'POST':
+        image.image.delete(save=False) 
+        image.delete()
+        messages.success(request, 'Image deleted successfully.')
+        return redirect('user_board', username=request.user.username)
+    return render(request, 'confirm_delete.html', {'image': image})
+
 # 3. View a user's board
 def user_board(request, username):
     user = get_object_or_404(User, username=username)
@@ -96,3 +106,4 @@ def save_position(request):
             return JsonResponse({'error': str(e)}, status=400)
     
     return JsonResponse({'error': 'invalid method'}, status=405)
+
