@@ -8,9 +8,8 @@
         <!-- DELETE ZONE — levo od upload -->
         <button id="delete-btn" class="delete-btn">Delete Image</button>
     {% endif %}
-        <hr style="margin: 40px 0; border: 1px dashed #ccc;">
     {% endif %}
-    <div id="button-progress" style="margin-top: 10px;"></div>
+    <div id="button-progress"></div>
 {% endblock %}
 
 
@@ -48,6 +47,7 @@
 <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const gallery = document.getElementById('gallery');
     const deleteBtn = document.getElementById('delete-btn');
     const uploadBtn = document.getElementById('upload-btn');
     const filePicker = document.getElementById('file-picker');
@@ -63,13 +63,18 @@ document.addEventListener('DOMContentLoaded', function() {
         deleteBtn.onclick = () => {
             const draggableItems = document.querySelectorAll('.draggable');
             const deleteHandlers = new Map();
+            gallery.classList.add('delete-mode');
+            
             draggableItems.forEach(item => {
+                item.classList.add('delete-mode');
 
                 function removeAllDeleteHandlers() {
                     deleteHandlers.forEach((handler, item) => {
                         item.removeEventListener('click', handler);
+                        item.classList.remove('delete-mode');
                     });
                     deleteHandlers.clear();
+                    gallery.classList.remove('delete-mode');
                 }
 
                 const handler = (e) => {
@@ -198,11 +203,14 @@ document.addEventListener('DOMContentLoaded', function() {
         [...files].forEach(file => {
             if (!file.type.startsWith('image/')) return;
             const prog = document.createElement('progress');
+            const gallery = document.getElementById('gallery');
+            const rect = gallery.getBoundingClientRect();
             prog.max = 100; prog.value = 0;
             container.appendChild(prog);
             const formData = new FormData();
             formData.append('image', file);
             formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+            formData.append('pos', `${rect.width/2},${rect.height/2}`);
             const xhr = new XMLHttpRequest();
             xhr.open('POST', "{% url 'post_image' %}");
             xhr.upload.onprogress = e => { if (e.lengthComputable) prog.value = (e.loaded/e.total)*100; };

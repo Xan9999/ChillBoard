@@ -26,8 +26,11 @@ def post_image(request):
     if request.method == 'POST':
         form = ImagePostForm(request.POST, request.FILES)
         if form.is_valid():
+            a = request.POST.get('pos', '{}').split(',')
             post = form.save(commit=False)
             post.user = request.user
+            post.pos_x = a[0]
+            post.pos_y = a[1]
             post.save()
             return redirect('user_board', username=request.user.username)
     else:

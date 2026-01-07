@@ -5,15 +5,10 @@
     {% load static %}
     <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    <style>
-        body { font-family: sans-serif; margin: 2rem; }
-        .gallery img { max-width: 300px; margin: 10px; }
-        nav { margin-bottom: 2rem; }
-        nav a { margin-right: 1rem; }
-    </style>
+
 </head>
 <body class="base">
-    <nav id="main_nav">
+    <nav id="main_nav", class="navbar">
         <a href="{% url 'home' %}">Home</a>
         {% if user.is_authenticated %}
             <a href="{% url 'user_board' user.username %}">My Board</a>
