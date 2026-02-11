@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 class ImagePost(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='images')
     image = models.ImageField(upload_to='boards/%Y/%m/%d/')
+    ID = models
     caption = models.CharField(max_length=200, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
