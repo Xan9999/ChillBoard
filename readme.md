@@ -13,3 +13,6 @@ Spletna stran na kateri lahko vsak uporabnik na lastno 'tablo' prilepi slike in 
 1. Install Docker
 2. `docker-compose up --build`
 3. Open http://localhost:8000
+
+## Example Database
+To use pre-made examples rename the Example_Database.sqlite3 to db.sqlite3

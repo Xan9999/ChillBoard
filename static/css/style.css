@@ -32,74 +32,15 @@ a{
     transition: all 0.4s ease;
 }
 
-.upload-btn {
-    background: none;
-    border: none;
-    padding: 0; 
-    text-decoration: underline;
-    position: relative;
-    z-index: 1000 !important;        /* ← Above the overlay */
-    cursor: pointer;
-    font-size: 16px;
-    font-family: sans-serif;
+.gallery-dropzone {
+    height: inherit;
+    width: inherit;
 }
-
-.upload-btn:hover {
-  color: #003366;
-}
-
-.upload-btn:focus-visible {
-  outline: none;
-  text-decoration: underline;
-}
-
-.delete-btn {
-    background: none;
-    border: none;
-    padding: 0;
-    text-decoration: underline;
-    position: relative;
-    z-index: 1000 !important;        /* ← Above the overlay */
-    cursor: pointer;
-    font-size: 16px;
-    font-family: sans-serif;
-}
-
-.delete-btn:hover {
-  color: #003366;
-}
-
-.delete-btn:focus-visible {
-  outline: none;
-  text-decoration: underline;
-}
-
-.fullscreen-dropzone.active {
-    opacity: 1;
-    pointer-events: all;
-    border: 8px dashed #007bff;
-    top: 20px;
-    left: 20px;
-    right: 20px;
-    bottom: 20px;
-    width: auto;
-    height: auto;
-    border-radius: 20px;
-    box-sizing: border-box;
-}
-
-/* CRITICAL: Never block clicks when not active */
-.fullscreen-dropzone:not(.active) {
-    pointer-events: none !important;
-}
-
-
 /* Your upload button – make sure it’s clickable */
 
 .gallery {
     position: relative;
-    background: 
-        url(../Gallery_texture.jpg) no-repeat; 
+    background-image: repeat;
     background-size: contain;
     overflow: hidden;
     margin: 0 auto;         /* ← adds space around it */
@@ -152,6 +93,13 @@ a{
     height: 10px;
     gap: 5px;
 }
+.profile-image {
+  width: 4em;
+  height: 4em; 
+  vertical-align: middle; 
+  border-radius: 50%; 
+  object-fit: cover;
+}
 
 .navbar{
     display: flex; 
@@ -160,4 +108,26 @@ a{
   }
 .navbar >*{
   color: white;
+}
+
+.navbar button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: sans-serif;
+  position: relative;
+  z-index: 1000 !important;
+}
+
+.navbar button:hover {
+  color: #003366;
+}
+
+.navbar button:focus-visible {
+  outline: none;
+  text-decoration: underline;
 }

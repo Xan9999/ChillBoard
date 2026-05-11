@@ -3,7 +3,12 @@
 <h1>All Boards</h1>
 <ul>
 {% for user in users %}
-    <li><a href="{% url 'user_board' user.username %}">@{{ user.username }}</a></li>
+    <li>
+        {% if user.profile_url %}
+            <img src="{{ user.profile_url }}" alt="{{'../static/default_profile_image.png'}}" class='profile-image'>
+        {% endif %}
+        <a href="{% url 'user_board' user.username %}">{{ user.username }}</a>
+    </li>
 {% empty %}
     <li>No users yet.</li>
 {% endfor %}

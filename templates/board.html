@@ -1,49 +1,50 @@
 {% extends 'base.html' %}
-{%block nav_extra %}
+
+{% block nav_extra %}
     {% if user.is_authenticated and user == board_user %}
-        <!-- 1. UPLOAD BUTTON (click opens file picker) -->
-        <button id="upload-btn" class="upload-btn">Upload Image</button>
+        <button id="upload-btn">Upload Image</button>
         <input type="file" id="file-picker" multiple accept="image/*" style="display: none;">
-    {% if user.is_authenticated and user == board_user %}
-        <!-- DELETE ZONE — levo od upload -->
-        <button id="delete-btn" class="delete-btn">Delete Image</button>
-    {% endif %}
+
+        <button id="delete-btn">Delete Image</button>
+        <button id="background-btn">Change Background</button>
+        <input type="file" id="background-picker" accept="image/*" style="display: none;">
+
+        <button id="profile-btn">Change Profile</button>
+        <input type="file" id="profile-picker" accept="image/*" style="display: none;">
     {% endif %}
     <div id="button-progress"></div>
 {% endblock %}
 
-
 {% block content %}
 <h1>{{ board_user.username }}'s Board</h1>
-<!-- FULL GALLERY + DRAGGABLE IMAGES + DROPZONE -->
-<div class="gallery {% if user.is_authenticated and user == board_user %}editable{% endif %}" id="gallery">
-    <!-- Invisible dropzone that covers the gallery only -->
+
+<div
+    class="gallery {% if user.is_authenticated and user == board_user %}editable{% endif %}"
+    id="gallery"
+    {% if background_url %}style="background-image: url('{{ background_url }}');"{% endif %}
+>
     {% if user.is_authenticated and user == board_user %}
         <div id="gallery-dropzone" class="gallery-dropzone">
             <div id="drop-progress"></div>
         </div>
     {% endif %}
 
-    <!-- All images (draggable) -->
     {% for img in images %}
         <div class="image-item draggable"
-        data-id="{{ img.id }}"
-        data-x="{{ img.pos_x|default:'0' }}"
-        data-y="{{ img.pos_y|default:'0' }}"
-        style="left: {{ img.pos_x }}px; top: {{ img.pos_y }}px; 
-               width: {{ img.width }}px; height: {{ img.height }}px; 
-               position: absolute;">        
-        <img src="{{ img.image.url }}" alt="{{ img.caption }}" class="img" style="height: {{img.height}}px; width: {{img.width}}px;">
-            {% if img.caption %}<p><em>{{ img.caption }}</em></p>
-            {% endif %}
-        <div class="resize-handle"></div>
+            data-id="{{ img.id }}"
+            data-x="{{ img.pos_x|default:'0' }}"
+            data-y="{{ img.pos_y|default:'0' }}"
+            style="left: {{ img.pos_x }}px; top: {{ img.pos_y }}px;
+                   width: {{ img.width }}px; height: {{ img.height }}px;
+                   position: absolute;">
+            <img src="{{ img.image.url }}" alt="{{ img.caption }}" class="img" style="height: {{ img.height }}px; width: {{ img.width }}px;">
+            {% if img.caption %}<p><em>{{ img.caption }}</em></p>{% endif %}
+            <div class="resize-handle"></div>
         </div>
     {% endfor %}
 </div>
 
-<!-- DRAG TO UPLOAD + CLICK TO UPLOAD + DRAGGABLE IMAGES -->
 {% if user.is_authenticated and user == board_user %}
-<script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -51,27 +52,35 @@ document.addEventListener('DOMContentLoaded', function() {
     const deleteBtn = document.getElementById('delete-btn');
     const uploadBtn = document.getElementById('upload-btn');
     const filePicker = document.getElementById('file-picker');
+    const backgroundBtn = document.getElementById('background-btn');
+    const backgroundPicker = document.getElementById('background-picker');
+    const profileBtn = document.getElementById('profile-btn');
+    const profilePicker = document.getElementById('profile-picker');
     const buttonProgress = document.getElementById('button-progress');
     const dropZone = document.getElementById('gallery-dropzone');
     const dropProgress = document.getElementById('drop-progress');
 
-    // Upload button
     if (uploadBtn) uploadBtn.onclick = () => filePicker.click();
-    if (filePicker) filePicker.onchange = () => uploadFiles(filePicker.files, buttonProgress);
-    // Delete button
+    if (backgroundBtn) backgroundBtn.onclick = () => backgroundPicker.click();
+    if (profileBtn) profileBtn.onclick = () => profilePicker.click();
+
+    if (filePicker) filePicker.onchange = () => uploadImages(filePicker.files, buttonProgress);
+    if (backgroundPicker) backgroundPicker.onchange = () => uploadBackground(backgroundPicker.files[0], buttonProgress);
+    if (profilePicker) profilePicker.onchange = () => uploadProfile(profilePicker.files[0], buttonProgress);
+
     if (deleteBtn) {
         deleteBtn.onclick = () => {
             const draggableItems = document.querySelectorAll('.draggable');
             const deleteHandlers = new Map();
             gallery.classList.add('delete-mode');
-            
+
             draggableItems.forEach(item => {
                 item.classList.add('delete-mode');
 
                 function removeAllDeleteHandlers() {
-                    deleteHandlers.forEach((handler, item) => {
-                        item.removeEventListener('click', handler);
-                        item.classList.remove('delete-mode');
+                    deleteHandlers.forEach((handler, element) => {
+                        element.removeEventListener('click', handler);
+                        element.classList.remove('delete-mode');
                     });
                     deleteHandlers.clear();
                     gallery.classList.remove('delete-mode');
@@ -82,9 +91,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const imageId = item.dataset.id;
                     fetch(`{% url 'delete_image' 0 %}`.replace('/0/', `/${imageId}/`), {
                         method: 'POST',
-                        headers: {
-                            'X-CSRFToken': '{{ csrf_token }}'
-                        }
+                        headers: { 'X-CSRFToken': '{{ csrf_token }}' }
                     })
                     .then(response => {
                         if (response.ok) {
@@ -94,16 +101,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             alert('Failed to delete image.');
                         }
                     });
-                }
+                };
+
                 deleteHandlers.set(item, handler);
                 item.addEventListener('click', handler);
             });
         };
     }
-    // Drop zone
 
     if (dropZone) {
-        ['dragenter','dragover','dragleave','drop'].forEach(e => 
+        ['dragenter','dragover','dragleave','drop'].forEach(e =>
             dropZone.addEventListener(e, ev => { ev.preventDefault(); ev.stopPropagation(); })
         );
         dropZone.addEventListener('dragenter', () => dropZone.classList.add('active'));
@@ -111,11 +118,10 @@ document.addEventListener('DOMContentLoaded', function() {
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('active'));
         dropZone.addEventListener('drop', e => {
             dropZone.classList.remove('active');
-            uploadFiles(e.dataTransfer.files, dropProgress);
+            uploadImages(e.dataTransfer.files, dropProgress);
         });
     }
-    // dragging
-    
+
     interact('.draggable')
         .draggable({
             inertia: false,
@@ -138,26 +144,24 @@ document.addEventListener('DOMContentLoaded', function() {
                     target.dataset.y = y;
                 },
                 end: savePosition
-            }})
+            }
+        })
         .resizable({
             edges: { right: true, bottom: true },
             listeners: {
                 move(event) {
-                    const box = event.target;                     // ← draggable skatla
-                    const img = box.querySelector('img'); 
+                    const box = event.target;
+                    const img = box.querySelector('img');
 
                     const newWidth = event.rect.width;
                     const newHeight = event.rect.height;
 
-                    // Resize the image itself
                     img.style.width = newWidth + 'px';
                     img.style.height = newHeight + 'px';
 
-                    // Resize container to match
                     box.style.width = newWidth + 'px';
                     box.style.height = newHeight + 'px';
 
-                    // Update position when resizing from corner
                     let x = (parseFloat(box.dataset.x) || 0) + event.deltaRect.left;
                     let y = (parseFloat(box.dataset.y) || 0) + event.deltaRect.top;
 
@@ -186,37 +190,77 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': '{{ csrf_token }}'
             },
-            body: JSON.stringify({
-                id: id,
-                x: x,
-                y: y,
-                width: w,
-                height: h
-            })
+            body: JSON.stringify({ id: id, x: x, y: y, width: w, height: h })
         })
         .then(r => r.json())
-        .then(data => console.log('Saved:', data))
-        .catch(err => console.error('Error:', err));
+        .catch(() => {});
     }
 
-    function uploadFiles(files, container) {
+    function uploadImages(files, container) {
+        const uploadUrl = "{% url 'post_image' %}";
+        const rect = gallery.getBoundingClientRect();
+
         [...files].forEach(file => {
             if (!file.type.startsWith('image/')) return;
+
             const prog = document.createElement('progress');
-            const gallery = document.getElementById('gallery');
-            const rect = gallery.getBoundingClientRect();
-            prog.max = 100; prog.value = 0;
+            prog.max = 100;
+            prog.value = 0;
             container.appendChild(prog);
+
             const formData = new FormData();
             formData.append('image', file);
             formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
             formData.append('pos', `${rect.width/2},${rect.height/2}`);
+
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', "{% url 'post_image' %}");
-            xhr.upload.onprogress = e => { if (e.lengthComputable) prog.value = (e.loaded/e.total)*100; };
+            xhr.open('POST', uploadUrl);
+            xhr.upload.onprogress = e => { if (e.lengthComputable) prog.value = (e.loaded / e.total) * 100; };
             xhr.onload = () => { if (xhr.status === 200 || xhr.status === 302) location.reload(); };
             xhr.send(formData);
         });
+    }
+
+    function uploadBackground(file, container) {
+        if (!file || !file.type.startsWith('image/')) return;
+
+        const uploadUrl = "{% url 'upload_background' %}";
+
+        const prog = document.createElement('progress');
+        prog.max = 100;
+        prog.value = 0;
+        container.appendChild(prog);
+
+        const formData = new FormData();
+        formData.append('background', file);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', uploadUrl);
+        xhr.upload.onprogress = e => { if (e.lengthComputable) prog.value = (e.loaded / e.total) * 100; };
+        xhr.onload = () => { if (xhr.status === 200 || xhr.status === 302) location.reload(); };
+        xhr.send(formData);
+    }
+
+    function uploadProfile(file, container) {
+        if (!file || !file.type.startsWith('image/')) return;
+
+        const uploadUrl = "{% url 'upload_profile' %}";
+
+        const prog = document.createElement('progress');
+        prog.max = 100;
+        prog.value = 0;
+        container.appendChild(prog);
+
+        const formData = new FormData();
+        formData.append('image', file);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', uploadUrl);
+        xhr.upload.onprogress = e => { if (e.lengthComputable) prog.value = (e.loaded / e.total) * 100; };
+        xhr.onload = () => { if (xhr.status === 200 || xhr.status === 302) location.reload(); };
+        xhr.send(formData);
     }
 });
 </script>
