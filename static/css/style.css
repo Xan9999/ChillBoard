@@ -131,3 +131,63 @@ a{
   outline: none;
   text-decoration: underline;
 }
+
+/* Follow button */
+#follow-btn {
+  background: none;
+  border: 1px solid white;
+  color: white;
+  padding: 4px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: none;
+}
+#follow-btn.btn-following {
+  background: #555;
+}
+#follow-btn:hover {
+  background: #333;
+}
+
+/* Comments */
+.comments-section {
+  max-width: 860px;
+  margin: 2rem auto 0;
+}
+.comment-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 1rem;
+}
+.comment-form input[type="text"] {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid #888;
+  background: #222;
+  color: white;
+}
+.comment-form button {
+  padding: 6px 16px;
+  border-radius: 4px;
+  border: none;
+  background: #446;
+  color: white;
+  cursor: pointer;
+}
+.comment {
+  border-bottom: 1px solid #444;
+  padding: 8px 0;
+}
+.comment p {
+  margin: 4px 0 0;
+}
+.comment-date {
+  font-size: 0.8em;
+  color: #aaa;
+  margin-left: 8px;
+}
+.no-comments {
+  color: #888;
+}

@@ -16,7 +16,18 @@
 {% endblock %}
 
 {% block content %}
-<h1>{{ board_user.username }}'s Board</h1>
+<div style="display:flex; align-items:center; gap:1em; margin-bottom:0.5em;">
+    <h1 style="margin:0;">{{ board_user.username }}'s Board</h1>
+    {% if user.is_authenticated and user != board_user %}
+        <button id="follow-btn"
+            data-url="{% url 'toggle_follow' board_user.username %}"
+            data-csrf="{{ csrf_token }}"
+            data-following="{{ is_following|yesno:'true,false' }}"
+            class="{% if is_following %}btn-following{% endif %}">
+            {% if is_following %}Unfollow{% else %}Follow{% endif %}
+        </button>
+    {% endif %}
+</div>
 
 <div
     class="gallery {% if user.is_authenticated and user == board_user %}editable{% endif %}"
@@ -43,6 +54,28 @@
         </div>
     {% endfor %}
 </div>
+
+<section class="comments-section">
+    <h2>Comments</h2>
+
+    {% if user.is_authenticated %}
+    <form method="post" action="{% url 'add_comment' board_user.username %}" class="comment-form">
+        {% csrf_token %}
+        <input type="text" name="text" maxlength="500" placeholder="Add a comment…" required>
+        <button type="submit">Post</button>
+    </form>
+    {% endif %}
+
+    {% for comment in comments %}
+    <div class="comment">
+        <strong>{{ comment.author.username }}</strong>
+        <span class="comment-date">{{ comment.created_at|date:"d.m.Y H:i" }}</span>
+        <p>{{ comment.text }}</p>
+    </div>
+    {% empty %}
+    <p class="no-comments">No comments yet.</p>
+    {% endfor %}
+</section>
 
 {% if user.is_authenticated and user == board_user %}
 <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
@@ -263,6 +296,33 @@ document.addEventListener('DOMContentLoaded', function() {
         xhr.send(formData);
     }
 });
+</script>
+{% endif %}
+
+{% if user.is_authenticated and user != board_user %}
+<script>
+(function() {
+    const btn = document.getElementById('follow-btn');
+    if (!btn) return;
+    btn.addEventListener('click', function() {
+        fetch(btn.dataset.url, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': btn.dataset.csrf }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'followed') {
+                btn.textContent = 'Unfollow';
+                btn.classList.add('btn-following');
+                btn.dataset.following = 'true';
+            } else {
+                btn.textContent = 'Follow';
+                btn.classList.remove('btn-following');
+                btn.dataset.following = 'false';
+            }
+        });
+    });
+})();
 </script>
 {% endif %}
 {% endblock %}

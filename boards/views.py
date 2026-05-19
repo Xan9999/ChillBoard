@@ -5,9 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.contrib.auth.models import User
-from .models import ImagePost
-from .models import BackgroundImage
-from .models import DEFAULT_BACKGROUND_IMAGE, DEFAULT_PROFILE_IMAGE, ProfileImage
+from .models import ImagePost, BackgroundImage, ProfileImage, Follow, Comment
+from .models import DEFAULT_BACKGROUND_IMAGE, DEFAULT_PROFILE_IMAGE
 from .forms import ImagePostForm, BackgroundPostForm, ProfilePostForm, CustomUserCreationForm
 from django.contrib.auth.forms import AuthenticationForm
 from django.http import JsonResponse
@@ -17,10 +16,18 @@ from django.templatetags.static import static
 # Create your views here.
 
 
-# 1. Home – list all users with boards
+# 1. Home – list all users with boards; followed users appear first
 def home(request):
-    users = User.objects.all().order_by('username')
-    profiles = ProfileImage.objects.filter(user__in=users)
+    all_users = User.objects.all().order_by('username')
+    followed_ids = set()
+    if request.user.is_authenticated:
+        followed_ids = set(Follow.objects.filter(follower=request.user).values_list('following_id', flat=True))
+
+    followed = [u for u in all_users if u.id in followed_ids]
+    others = [u for u in all_users if u.id not in followed_ids]
+    users = followed + others
+
+    profiles = ProfileImage.objects.filter(user__in=all_users)
     profile_by_user_id = {p.user_id: p for p in profiles}
     for user in users:
         profile = profile_by_user_id.get(user.id)
@@ -28,7 +35,9 @@ def home(request):
             user.profile_url = static(profile.image.name) if profile.image.name == DEFAULT_PROFILE_IMAGE else profile.image.url
         else:
             user.profile_url = None
-    return render(request, 'home.html', {'users': users})
+        user.is_followed = user.id in followed_ids
+
+    return render(request, 'home.html', {'users': users, 'followed_ids': followed_ids})
 
 # 2. Post image (login required)
 @login_required
@@ -60,7 +69,7 @@ def delete_image(request, image_id):
 # 3. View a user's board
 def user_board(request, username):
     user = get_object_or_404(User, username=username)
-    images = user.images.all().order_by('-created_at')
+    images = user.images.all().order_by('created_at')  # oldest first so newest renders on top
     try:
         background = user.background
     except BackgroundImage.DoesNotExist:
@@ -68,7 +77,20 @@ def user_board(request, username):
     background_url = None
     if background and background.background:
         background_url = static(background.background.name) if background.background.name == DEFAULT_BACKGROUND_IMAGE else background.background.url
-    return render(request, 'board.html', {'board_user': user, 'images': images, 'background': background, 'background_url': background_url})
+
+    comments = Comment.objects.filter(board_user=user).select_related('author')
+    is_following = False
+    if request.user.is_authenticated and request.user != user:
+        is_following = Follow.objects.filter(follower=request.user, following=user).exists()
+
+    return render(request, 'board.html', {
+        'board_user': user,
+        'images': images,
+        'background': background,
+        'background_url': background_url,
+        'comments': comments,
+        'is_following': is_following,
+    })
 
 @login_required
 def upload_background(request):
@@ -162,6 +184,29 @@ def save_position(request):
             return JsonResponse({'status': 'saved', 'x': x, 'y': y})
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
-    
+
     return JsonResponse({'error': 'invalid method'}, status=405)
+
+@login_required
+def toggle_follow(request, username):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'invalid method'}, status=405)
+    target = get_object_or_404(User, username=username)
+    if target == request.user:
+        return JsonResponse({'error': 'cannot follow yourself'}, status=400)
+    follow, created = Follow.objects.get_or_create(follower=request.user, following=target)
+    if not created:
+        follow.delete()
+        return JsonResponse({'status': 'unfollowed'})
+    return JsonResponse({'status': 'followed'})
+
+@login_required
+def add_comment(request, username):
+    if request.method != 'POST':
+        return redirect('user_board', username=username)
+    board_owner = get_object_or_404(User, username=username)
+    text = request.POST.get('text', '').strip()
+    if text:
+        Comment.objects.create(board_user=board_owner, author=request.user, text=text)
+    return redirect('user_board', username=username)
 

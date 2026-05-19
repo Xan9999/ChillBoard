@@ -12,4 +12,6 @@ urlpatterns = [
     path('@<username>/', views.user_board, name='user_board'),
     path('save-position/', views.save_position, name='save_position'),
     path('delete-image/<int:image_id>/', views.delete_image, name='delete_image'),
+    path('@<username>/follow/', views.toggle_follow, name='toggle_follow'),
+    path('@<username>/comment/', views.add_comment, name='add_comment'),
 ]
