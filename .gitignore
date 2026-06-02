@@ -2,3 +2,4 @@ venv/s
 db.sqlite3
 media/
 media/*
+.claude/
